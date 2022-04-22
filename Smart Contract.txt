@@ -1,0 +1,231 @@
+pragma solidity ^0.4.0;
+
+contract pagar {
+
+    address[] amigos = [0xBfcA8742E27D841Ef0C08eA7A58Ed5a79ab7a03C, 0x412fab210f8a131bBf1449e042F73dcE18F3eec0, 0x7B9373A832F1731981431D31FC480893Fd2c4C60];
+    address[] administrador = [0xaa42A80AE855D2849B957193b67dD5236c1de696,0xaa42A80AE855D2849B957193b67dD5236c1de696, 0xaa42A80AE855D2849B957193b67dD5236c1de696];
+    uint [] participacion = [30,30,40];
+    uint [] valores=[0,0,0];
+    mapping (address => uint) withdrawnAmounts;
+    
+    function pagar() payable {
+    }
+    
+    function () payable{
+        
+    }
+    
+    modifier autorizarAmigos() {
+        bool contains = false;
+        
+        for(uint i = 0; i < amigos.length; i++) {
+            if(amigos[i] == msg.sender) {
+                contains = true;
+            }
+        }
+        require(contains);
+        _;
+    }
+    
+     modifier autorizarAdministrador() {
+        bool contains = false;
+        
+        for(uint i = 0; i < administrador.length; i++) {
+            if(administrador[i] == msg.sender) {
+                contains = true;
+            }
+        }
+        require(contains);
+        _;
+    }
+    
+    function verParticipacion(address _direccion) constant returns(uint){
+         for(uint i = 0; i < amigos.length; i++) {
+            if (amigos[i]==_direccion){
+                return participacion[i];
+            }
+        }
+    }
+    
+    function consultarSaldo() constant returns(uint) {
+        return this.balance;
+    }
+    
+     function sacarTodo() autorizarAdministrador {
+            msg.sender.transfer(this.balance);
+    }
+    
+    function enviarTodos() autorizarAdministrador {
+        for(uint i = 0; i < participacion.length; i++) {
+            valores[i]=(this.balance*participacion[i]/100);
+        }
+         
+        for(uint j = 0; j < valores.length; j++) {
+            amigos[j].transfer(valores[j]);
+        }
+        
+        
+    }
+    
+}
+
+
+
+
+
+web
+
+<html>
+	<head>
+		<title>[dApp] dMessenger - Ethereum Chile</title>
+		
+	</head>
+	<body>
+            
+                <h1>Consultas al Contrato</h1>
+                  <div>
+                            <input type="submit" onclick="consultarSaldo()" value="Saldo actual del contrato">
+                        </div>
+                <div id="interfaz" style="margin-top: 10px">
+            <input type="text" name="direccion" placeholder="Direccion eth">
+            </div>
+            <div>
+			<input type="submit" onclick="verParticipacion()" value="Consultar Participacion">
+                      
+                        	
+            </div>
+            
+                        <div id="interfaz">
+			<h1>Acciones del Contrato</h1>
+			<input type="submit" onclick="enviarTodos()" value="Distribuir eth a los amigos segun su % de participacion">
+                        <input type="submit" onclick="sacarTodo()" value="Sacar valores que queden en el contrato">
+                        
+                        
+                       </div>
+           <hr />
+		<h1>Descripcion de cada accion</h1>
+                <p>Boton: Saldo actual del contrato, muestra el saldo total actual del contrato.</p>
+                <p>Boton: Consultar Participacion, segun una direccion de eth muestra el porcentaje de participacion que tiene definido en el contrato.</p>
+		<p>Boton: Distribuir eth a los amigos segun su % de participacion, distribuye los eth que tenga el contrato a todos los amigos segun su porcentaje de participacion.</p>
+                <p>Boton: Sacar valores que queden en el contrato, deja el contrato con 0 eth pasando los valores al administrador.</p>
+                <script src="https://code.jquery.com/jquery-latest.js"></script>
+             <script language="javascript" type="text/javascript">
+                    var abi = [
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "enviarTodos",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"constant": false,
+		"inputs": [],
+		"name": "sacarTodo",
+		"outputs": [],
+		"payable": false,
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "fallback"
+	},
+	{
+		"inputs": [],
+		"payable": true,
+		"stateMutability": "payable",
+		"type": "constructor"
+	},
+	{
+		"constant": true,
+		"inputs": [],
+		"name": "consultarSaldo",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"constant": true,
+		"inputs": [
+			{
+				"name": "_direccion",
+				"type": "address"
+			}
+		],
+		"name": "verParticipacion",
+		"outputs": [
+			{
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"payable": false,
+		"stateMutability": "view",
+		"type": "function"
+	}
+];
+var addressContrato = "0x2AA785b01b3943Ae731C76Ac19E6A43b7bA870ac";
+var contrato = web3.eth.contract(abi);
+var funciones = contrato.at(addressContrato);
+var contadorMensajes = [0];
+var historialMensajes = {};
+$(document).ready(function(){
+	if (typeof web3 !== 'undefined') {
+		web3 = new Web3(web3.currentProvider);
+	} else {
+		web3 = new Web3(new Web3.providers.HttpProvider("https://rinkeby.infura.io"));
+	}
+})
+function enviarTodos(){
+		funciones.enviarTodos(function(error){
+			if(error)	throw error;
+			alert("Mensaje enviado!!");
+		});
+}
+
+function sacarTodo(){
+		funciones.sacarTodo(function(error){
+			if(error)	throw error;
+			alert("Mensaje enviado!!");
+		});
+}
+function consultarSaldo(){
+    var mensajesNuevo = false;
+	funciones.consultarSaldo(function(error, respuesta){
+
+		if(error)	throw error;
+alert('Saldo en ETH: '+(respuesta/1000000000000000000));
+		
+	});
+
+	
+	}
+		
+function verParticipacion(){
+    var mensaje = $("input[name=direccion").val();
+	if(mensaje.length > 0){
+
+		funciones.verParticipacion(mensaje, function(error, respuesta){
+
+			if(error)	throw error;
+			alert('Su participacion es de: '+respuesta+'%')
+
+		});
+
+	}
+	$("input[name=direccion").val('');
+       	}
+
+                </script>
+	</body>
+</html>
